@@ -1,0 +1,15 @@
+linters: lintr::linters_with_defaults(
+  line_length_linter = lintr::line_length_linter(2500),
+  assignment_linter = NULL,
+  object_name_linter = NULL,
+  infix_spaces_linter = NULL,
+  seq_linter = NULL,
+  trailing_whitespace_linter = NULL,
+  object_length_linter = NULL,
+  cyclocomp_linter = NULL,
+  commented_code_linter = NULL,
+  object_usage_linter = NULL,
+  T_and_F_symbol_linter = NULL,
+  paren_body_linter = NULL,
+  brace_linter = NULL
+  )

@@ -1,0 +1,7 @@
+.DS_Store
+.Rhistory
+.Rproj.user/
+.vscode/
+datasets/
+output/logs/**/*.out
+output/logs/**/*.txt
