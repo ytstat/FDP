@@ -215,6 +215,6 @@ df <- data.frame(error = as.vector(error_avg), sd = as.vector(error_sd), c = rep
 
 # save it as a 8 x 4 PDF
 df %>% mutate(c = factor(c)) %>% ggplot(aes(x = h, y = log(error), group = c, color = c, shape = c)) + geom_point(size = 3) +
-  theme(legend.position = "bottom") + geom_line() + guides(colour = guide_legend(nrow = 1)) + xlab(TeX(r"($\tilde{c}$)")) +
+  theme(legend.position = "bottom") + geom_line() + guides(colour = guide_legend(nrow = 1)) + xlab(TeX(r"($h$)")) +
   labs(color = latex2exp::TeX(r"($\tilde{c}$)"),
        shape = latex2exp::TeX(r"($\tilde{c}$)"))
