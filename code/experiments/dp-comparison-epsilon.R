@@ -8,26 +8,28 @@ Sys.setenv(LANG = "en_US.UTF-8")
 seed <- get_seed()
 cat("seed=", seed, "\n")
 
-filename <- result_file("dp-comparison-epsilon", seed)
+args <- commandArgs(trailingOnly = TRUE)
+d <- get_positive_int_arg(args, 1, 10, "d")
+K <- get_positive_int_arg(args, 2, 20, "K")
+cat("d=", d, "\n")
+cat("K=", K, "\n")
+
+filename <- result_file("dp-comparison-epsilon", seed, scenario_name(d, K))
 if (file.exists(filename)) {
   stop("Done!")
 }
 
 set.seed(seed, kind = "L'Ecuyer-CMRG")
 
-# ---------------------------------------------------
 n <- 60000
 epsilon_list <- seq(0.6, 2.4, 0.2)
-error <- matrix(nrow = 6, ncol = length(epsilon_list), dimnames = list(c("None-DP", "CDP-all", "CDP-target", "FDP", "LDP-all", "LDP-target"), epsilon_list))
+error <- matrix(nrow = 8, ncol = length(epsilon_list), dimnames = list(c("None-DP", "CDP-all", "CDP-target", "FDP", "FDP-detection", "FDP-detection-sample", "LDP-all", "LDP-target"), epsilon_list))
+coverage <- matrix(nrow = 1, ncol = length(epsilon_list), dimnames = list("FDP-detection-sample", epsilon_list))
 
-K <- 10
-d <- 20
 delta <- 0.001
 eta <- 0.01
 
-
-
-rho <- 18/(1 + 81)
+rho <- 0.25
 
 for (i in 1:length(epsilon_list)) {
   epsilon <- epsilon_list[i]
@@ -52,8 +54,15 @@ for (i in 1:length(epsilon_list)) {
   error["LDP-all", i] <- l2_error(LinearReg_LDP(X = X_combined, Y = Y_combined, T = floor(log(n*(K+1))), epsilon, eta = rho), beta) # eta for the LDP alg is the step size, different from the FDP alg
   
   error["LDP-target", i] <- l2_error(LinearReg_LDP(X = data[[1]]$X, Y = data[[1]]$Y, T = floor(log(n)), epsilon, eta = rho), beta) 
-  
+
+  A <- Priviate_detection(data, rho, epsilon/2, delta/2, beta0 = NULL, eta, c = 1, epsilon_r = epsilon, delta_r = delta, private_variance = "nodiff")
+  error["FDP-detection", i] <- l2_error(LinearReg_FDP(data[A], T=floor(log(n*length(A))), rho, epsilon/2, delta/2, eta = eta, private_variance = "nodiff"), beta)
+
+  D <- Data_splitting(data)
+  A <- Priviate_detection(D[[1]], rho, epsilon, delta, beta0 = NULL, eta, c = 1, epsilon_r = epsilon, delta_r = delta, split_option = "sample", private_variance = "nodiff")
+  coverage["FDP-detection-sample", i] <- (length(A)-1)/K
+  error["FDP-detection-sample", i] <- l2_error(LinearReg_FDP(D[[2]][A], T=floor(log(n*length(A)/2)), rho, epsilon, delta, eta = eta, private_variance = "nodiff"), beta)
 }
 
 
-save(error, file = filename)
+save(error, coverage, file = filename)

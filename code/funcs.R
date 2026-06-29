@@ -108,7 +108,6 @@ LinearReg_CDP <- function(X, Y, T, rho, epsilon, delta, beta0 = NULL, eta = 0.01
     beta0 <- numeric(d)
   }
   b <- floor(n/T)
-  # R <- sqrt(5*d*log(n/eta))
   R <- sqrt(d + 2*sqrt(d*log(n/eta)) + 2*log(n/eta))
   ind_batch <- sapply(1:T, function(t){
     if (t != T) {
@@ -127,8 +126,6 @@ LinearReg_CDP <- function(X, Y, T, rho, epsilon, delta, beta0 = NULL, eta = 0.01
     } else {
       R_t <- sqrt(log(n/eta))*PrivateVariance_nodiff(res, epsilon/2, delta/2)
     }
-    
-    # R_t <- sqrt(log(n/eta))
     beta_t <- beta_t - rho*(colMeans(Row_proj(X[ind, ], R)*Proj(-res, R_t)) + sqrt(2*log(2.5/delta))*R*R_t/(b*epsilon/2)*rnorm(d))
   }
   
@@ -172,8 +169,6 @@ Priviate_detection <- function(data, rho, epsilon, delta, beta0 = NULL, eta = 0.
   
   
   return(A)
-  # return(list(A=A, score=score, r=r))
-  
 } 
  
 # Federated DP regression that aggregates noisy batch gradients across sites.
@@ -187,7 +182,6 @@ LinearReg_FDP <- function(data, T, rho, epsilon, delta, beta0 = NULL, eta = 0.01
     beta0 <- numeric(d)
   }
   b <- floor(n/T)
-  # R <- sqrt(5*d*log(n/eta))
   R <- sqrt(d + 2*sqrt(d*log(n/eta)) + 2*log(n/eta))
   ind_batch <- sapply(1:K, function(k){
     sapply(1:T, function(t){

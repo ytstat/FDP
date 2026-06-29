@@ -1,7 +1,5 @@
 #!/bin/sh
-#
 # Run the detection-sensitivity experiment from the repository root.
-#
 #SBATCH --account=stats
 #SBATCH --job-name=detection-sensitivity
 #SBATCH -c 1

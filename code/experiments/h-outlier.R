@@ -8,29 +8,31 @@ Sys.setenv(LANG = "en_US.UTF-8")
 seed <- get_seed()
 cat("seed=", seed, "\n")
 
-filename <- result_file("h-outlier", seed)
+args <- commandArgs(trailingOnly = TRUE)
+d <- get_positive_int_arg(args, 1, 10, "d")
+K <- get_positive_int_arg(args, 2, 20, "K")
+cat("d=", d, "\n")
+cat("K=", K, "\n")
+
+filename <- result_file("h-outlier", seed, scenario_name(d, K))
 if (file.exists(filename)) {
   stop("Done!")
 }
 
 set.seed(seed, kind = "L'Ecuyer-CMRG")
 
-# ---------------------------------------------------
 
 h_list <- seq(0, 1, 0.1)
 error <- matrix(nrow = 8, ncol = length(h_list), dimnames = list(c("None-DP", "CDP-all", "CDP-target", "FDP", "FDP-detection", "FDP-detection-sample", "LDP-all", "LDP-target"), h_list))
 
-K <- 10
-# K <- 15
-d <- 20
 epsilon <- 1
 delta <- 0.001
 eta <- 0.01
 
-n <- 100000
+n <- 60000
 
 beta0 <- rep(1, d)/sqrt(d)
-rho <- 18/(1 + 81)
+rho <- 0.25
 
 for (i in 1:length(h_list)) {
   h <- h_list[i]
@@ -48,7 +50,7 @@ for (i in 1:length(h_list)) {
   
   X_combined <- Reduce(rbind, sapply(1:(K+1), function(k){data[[k]]$X}, simplify = F))
   Y_combined <- Reduce(c, sapply(1:(K+1), function(k){data[[k]]$Y}, simplify = F))
-  
+
   error["None-DP", i] <- l2_error(LinearReg(X = data[[1]]$X, Y = data[[1]]$Y), beta0)
   error["CDP-all", i] <- l2_error(LinearReg_CDP(X = X_combined, Y = Y_combined, T = floor(log(n*(K+1))), rho, epsilon, delta, eta = eta, private_variance = "nodiff"), beta0)
   
@@ -59,11 +61,14 @@ for (i in 1:length(h_list)) {
   A <- Priviate_detection(data, rho, epsilon/2, delta/2, beta0 = NULL, eta, c = 1, epsilon_r = epsilon, delta_r = delta, private_variance = "nodiff")
   error["FDP-detection", i] <- l2_error(LinearReg_FDP(data[A], T=floor(log(n*length(A))), rho, epsilon/2, delta/2, eta = eta, private_variance = "nodiff"), beta0)
 
+  D <- Data_splitting(data)
+  A <- Priviate_detection(D[[1]], rho, epsilon, delta, beta0 = NULL, eta, c = 1, epsilon_r = epsilon, delta_r = delta, split_option = "sample", private_variance = "nodiff")
+  error["FDP-detection-sample", i] <- l2_error(LinearReg_FDP(D[[2]][A], T=floor(log(n*length(A)/2)), rho, epsilon, delta, eta = eta, private_variance = "nodiff"), beta0)
+  
+  
   error["LDP-all", i] <- l2_error(LinearReg_LDP(X = X_combined, Y = Y_combined, T = floor(log(n*(K+1))), epsilon, eta = rho), beta0) # eta for the LDP alg is the step size, different from the FDP alg
 
   error["LDP-target", i] <- l2_error(LinearReg_LDP(X = data[[1]]$X, Y = data[[1]]$Y, T = floor(log(n)), epsilon, eta = rho), beta0)
-
 }
 
 save(error, file = filename)
-

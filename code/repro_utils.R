@@ -23,21 +23,46 @@ ensure_dir <- function(path) {
   path
 }
 
-result_file <- function(experiment, seed) {
+result_dir <- function(experiment, scenario = NULL) {
+  parts <- c("output", "results", experiment)
+  if (!is.null(scenario) && nzchar(scenario)) {
+    parts <- c(parts, scenario)
+  }
+  do.call(file.path, as.list(parts))
+}
+
+result_file <- function(experiment, seed, scenario = NULL) {
   # Each experiment stores one .RData file per replicate/seed.
   file.path(
-    ensure_dir(file.path("output", "results", experiment)),
+    ensure_dir(result_dir(experiment, scenario)),
     paste0(seed, ".RData")
   )
 }
 
-result_files <- function(experiment) {
-  result_dir <- file.path("output", "results", experiment)
-  if (!dir.exists(result_dir)) {
+result_files <- function(experiment, scenario = NULL) {
+  path <- result_dir(experiment, scenario)
+  if (!dir.exists(path)) {
     return(character())
   }
 
-  sort(list.files(result_dir, pattern = "\\.RData$", full.names = TRUE))
+  sort(list.files(path, pattern = "\\.RData$", full.names = TRUE))
+}
+
+scenario_name <- function(d, K) {
+  paste0("d", d, "_K", K)
+}
+
+get_positive_int_arg <- function(args, position, default, name) {
+  value <- default
+  if (length(args) >= position) {
+    value <- suppressWarnings(as.integer(args[[position]]))
+  }
+
+  if (is.na(value) || value <= 0L) {
+    stop(sprintf("%s must be a positive integer.", name))
+  }
+
+  value
 }
 
 figure_file <- function(stem, extension = "pdf") {

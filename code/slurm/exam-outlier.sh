@@ -1,7 +1,5 @@
 #!/bin/sh
-#
 # Run the exam-outlier experiment from the repository root.
-#
 #SBATCH --account=stats
 #SBATCH --job-name=exam-outlier
 #SBATCH -c 1

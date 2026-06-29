@@ -15,19 +15,12 @@ if (file.exists(filename)) {
 
 set.seed(seed, kind = "L'Ecuyer-CMRG")
 
-# ---------------------------------------------------
 
-# Run this script from the repository root so the relative paths below resolve.
 D <- read.csv(file.path("data", "Exam_Score_Prediction.csv"))
-
-# fit_lm <- lm(exam_score ~ ., data = D)
-# summary(fit_lm)
 
 selected_variables <- c("study_hours", "class_attendance", "sleep_hours", "sleep_quality", "study_method", "facility_rating", "exam_score", "course")
 
-# ------------------------
 # Preprocess the data
-# ------------------------
 cat_vars <- c("sleep_quality", 
               "study_method", 
               "facility_rating")
@@ -57,18 +50,6 @@ cont_vars <- c(
   "exam_score"
 )
 
-# # standardize the whole data
-# 
-# mean_sd_info <- numeric(2)
-# names(mean_sd_info) <- c("mean", "sd")
-# mean_sd_info["mean"] <- mean(D$exam_score)
-# mean_sd_info["sd"] <- sd(D$exam_score)
-# 
-# D <- D |>
-#   mutate(across(all_of(cont_vars), ~ (. - mean(.)) / sd(.)))
-
-
-
 # split data by course into named list and drop the identifier afterwards
 course_datasets <- split(D, D$course)
 course_datasets <- lapply(course_datasets, function(df) {
@@ -81,12 +62,6 @@ K <- length(course_datasets)
 # standardize each dataset separately
 mean_sd_info <- matrix(nrow = K, ncol = 2, dimnames = list(names(course_datasets), c("mean", "sd")))
 
-
-# contaminate a target course dataset by adding Gaussian noise
-# course_datasets[[1]]$exam_score <- course_datasets[[1]]$exam_score +
-#   as.matrix(course_datasets[[1]][, colnames(course_datasets[[1]])!="exam_score"]) %*% rnorm(ncol(course_datasets[[1]])-1, 0, 50) # nolint: infix_spaces_linter.
-
-
 for (k in 1:K) {
   mean_sd_info[k, "mean"] <- mean(course_datasets[[k]]$exam_score)
   mean_sd_info[k, "sd"] <- sd(course_datasets[[k]]$exam_score)
@@ -95,11 +70,9 @@ for (k in 1:K) {
 
 
 # contaminate a target course dataset by adding Gaussian noise
-course_datasets[[1]]$exam_score <- course_datasets[[1]]$exam_score + rnorm(nrow(course_datasets[[1]]), mean = 5, sd = 1)
+course_datasets[[1]]$exam_score <- course_datasets[[1]]$exam_score + rnorm(nrow(course_datasets[[1]]), mean = 7.5, sd = 1)
 
-# ------------------------
 # Run different DP algorithms
-# ------------------------
 
 # sample the training and test datasets
 test_index <- sapply(1:length(course_datasets), function(i) {
@@ -115,7 +88,7 @@ error <- rep(list(matrix(nrow = 10, ncol = length(epsilon_list),
 K <- length(course_datasets)
 delta <- 0.001
 eta <- 0.01
-rho <- 18/(1 + 81)
+rho <- 0.25
 
 for (k in 1:7) {
   for (i in 1:length(epsilon_list)) {

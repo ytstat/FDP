@@ -1,7 +1,5 @@
 #!/bin/sh
-#
 # Run the exam experiment from the repository root.
-#
 #SBATCH --account=stats
 #SBATCH --job-name=exam
 #SBATCH -c 1

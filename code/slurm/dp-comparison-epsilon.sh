@@ -1,7 +1,5 @@
 #!/bin/sh
-#
 # Run the dp-comparison-epsilon experiment from the repository root.
-#
 #SBATCH --account=stats
 #SBATCH --job-name=dp-comparison-epsilon
 #SBATCH -c 1
@@ -17,5 +15,8 @@ SCRIPT_DIR="$(CDPATH= cd -- "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd)"
 cd "$REPO_ROOT" || exit 1
 
+d=${1:-10}
+K=${2:-20}
+
 mkdir -p output/logs/dp-comparison-epsilon
-R CMD BATCH --no-save --vanilla code/experiments/dp-comparison-epsilon.R "output/logs/dp-comparison-epsilon/${SLURM_ARRAY_JOB_ID}_${SLURM_ARRAY_TASK_ID}.txt"
+R CMD BATCH --no-save --vanilla "--args ${d} ${K}" code/experiments/dp-comparison-epsilon.R "output/logs/dp-comparison-epsilon/${SLURM_ARRAY_JOB_ID}_${SLURM_ARRAY_TASK_ID}.txt"

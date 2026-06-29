@@ -2,88 +2,91 @@
 
 This repository contains reproducibility materials for the paper *Federated Transfer Learning with Differential Privacy* by Mengchu Li, Ye Tian, Yang Feng, and Yi Yu.
 
-The paper studies transfer learning in federated settings where two issues arise simultaneously: source-target heterogeneity across sites and privacy protection for each site's local data. It introduces a federated differential privacy framework, analyzes the tradeoff between privacy and statistical efficiency, and studies how privacy and heterogeneity jointly affect the benefit of transfer. The current public repository focuses on the numerical experiments for the linear regression setting and the empirical outlier illustration included in the manuscript.
+The code reproduces the numerical experiments in the manuscript: low-dimensional linear-regression simulations, logistic-regression simulations, sensitivity analyses, and the exam-score real-data experiments with source contamination.
 
 ## Repository Structure
 
-- `README.md`: paper overview and instructions for reproducing the analyses.
-- `manuscript/`: manuscript source files. This directory is intentionally left as a placeholder so the LaTeX source can be added later.
-- `data/`: input data files used by the empirical analysis.
-- `code/`: experiment scripts, helper functions, plotting code, and SLURM job scripts.
-- `output/`: generated `.RData` files and figures.
+- `manuscript/`: latest manuscript PDF.
+- `data/`: input data for the empirical exam-score analyses.
+- `code/`: experiment scripts, shared helper functions, plotting code, and SLURM wrappers.
+- `output/`: precomputed `.RData` files and generated figure PDFs.
 
-## Analyses In This Repository
+## Analyses
 
-- `code/experiments/dp-comparison-n.R`: simulation comparing nonprivate, centralized DP, federated DP, and local DP estimators as the per-site sample size `n` varies.
-- `code/experiments/dp-comparison-epsilon.R`: simulation comparing the same methods as the privacy budget `epsilon` varies.
-- `code/experiments/h-outlier.R`: simulation studying the effect of source heterogeneity and outlier contamination, including detection-based variants.
-- `code/experiments/detection-sensitivity.R`: sensitivity analysis for the private source-detection step as the heterogeneity level `h` and threshold parameter `c` vary.
-- `code/experiments/exam.R`: empirical exam-score prediction analysis without artificial contamination.
-- `code/experiments/exam-outlier.R`: empirical exam-score prediction example with one contaminated course to illustrate robustness of the transfer procedures.
-- `code/plot.R`: section-based plotting script that aggregates saved `.RData` files and recreates the figures corresponding to the experiment blocks already coded there.
+- `code/experiments/dp-comparison.R`: homogeneous linear-regression simulation varying the per-site sample size `n`.
+- `code/experiments/dp-comparison-epsilon.R`: homogeneous linear-regression simulation varying the privacy budget `epsilon`.
+- `code/experiments/h-outlier.R`: heterogeneous-source simulation varying the heterogeneity level `h`.
+- `code/experiments/detection-sensitivity.R`: detection-threshold sensitivity analysis varying `h` and `\tilde{c}`.
+- `code/experiments/dp-comparison-small-n.R`: additional small-sample-size simulation.
+- `code/experiments/dp-comparison-logistic.R`: logistic-regression simulation varying `n`.
+- `code/experiments/dp-comparison-epsilon-logistic.R`: logistic-regression simulation varying `epsilon`.
+- `code/experiments/fdp-rho-sensitivity.R`: FDP step-size sensitivity analysis.
+- `code/experiments/exam.R`: empirical exam-score prediction analysis.
+- `code/experiments/exam-outlier.R`: empirical exam-score analysis with one contaminated course.
+- `code/experiments/exam-outlier-2.R`: empirical exam-score analysis with two contaminated courses.
+- `code/plot.R`: aggregates saved `.RData` files and recreates manuscript Figures 2-5 and 7-13.
 
 ## Software Requirements
 
-The code is written in R. The current scripts use the following packages:
+The code is written in R. The scripts use:
 
 - `dplyr`
 - `rmutil`
 - `ggplot2`
-- `ggpubfigs`
 - `ggpubr`
 - `latex2exp`
-- `conflicted`
 
 The SLURM scripts in `code/slurm/` assume an HPC environment with `sbatch` and an R module such as `R/4.1.0`. Adjust those settings if you run on a different system.
 
-## How To Reproduce The Analyses
+## Reproducing The Analyses
 
-Run all commands from the repository root.
+Run commands from the repository root. Each experiment writes one `.RData` file per seed to `output/results/`. Parameterized simulations use scenario folders such as `output/results/dp-comparison/d10_K20/`.
 
-1. Generate experiment outputs.
+For one local replicate of the main experiments:
 
 ```bash
-SEED=1 Rscript code/experiments/dp-comparison-n.R
-SEED=1 Rscript code/experiments/dp-comparison-epsilon.R
-SEED=1 Rscript code/experiments/h-outlier.R
+SEED=1 Rscript code/experiments/dp-comparison.R 10 20
+SEED=1 Rscript code/experiments/dp-comparison-epsilon.R 10 20
+SEED=1 Rscript code/experiments/h-outlier.R 10 20
 SEED=1 Rscript code/experiments/detection-sensitivity.R
 SEED=1 Rscript code/experiments/exam.R
 SEED=1 Rscript code/experiments/exam-outlier.R
 ```
 
-If you are using SLURM, the matching submission scripts are:
+Additional appendix experiments:
 
 ```bash
-sbatch --array=1-200 code/slurm/dp-comparison.sh
-sbatch --array=1-200 code/slurm/dp-comparison-epsilon.sh
-sbatch --array=1-200 code/slurm/h-outlier.sh
-sbatch --array=1-200 code/slurm/detection-sensitivity.sh
-sbatch --array=1-200 code/slurm/exam.sh
-sbatch --array=1-200 code/slurm/exam-outlier.sh
+SEED=1 Rscript code/experiments/dp-comparison-small-n.R 10 20
+SEED=1 Rscript code/experiments/dp-comparison.R 20 50
+SEED=1 Rscript code/experiments/dp-comparison-epsilon.R 20 50
+SEED=1 Rscript code/experiments/dp-comparison.R 5 20
+SEED=1 Rscript code/experiments/dp-comparison-epsilon.R 5 20
+SEED=1 Rscript code/experiments/dp-comparison-logistic.R 10 20
+SEED=1 Rscript code/experiments/dp-comparison-epsilon-logistic.R 10 20
+SEED=1 Rscript code/experiments/fdp-rho-sensitivity.R 10 20
+SEED=1 Rscript code/experiments/exam-outlier-2.R
 ```
 
-2. Each experiment writes one `.RData` file per replicate to `output/results/<experiment>/`.
+For SLURM runs, use arrays over 100 seeds:
 
-Current output directories used by the scripts are:
+```bash
+sbatch --array=1-100 code/slurm/dp-comparison.sh 10 20
+sbatch --array=1-100 code/slurm/dp-comparison-epsilon.sh 10 20
+sbatch --array=1-100 code/slurm/h-outlier.sh 10 20
+sbatch --array=1-100 code/slurm/detection-sensitivity.sh
+sbatch --array=1-100 code/slurm/exam.sh
+sbatch --array=1-100 code/slurm/exam-outlier.sh
+```
 
-- `output/results/dp-comparison-n/`
-- `output/results/dp-comparison-epsilon/`
-- `output/results/h-outlier/`
-- `output/results/detection-sensitivity/`
-- `output/results/exam/`
-- `output/results/exam-outlier/`
-
-3. After the needed result files have been created, run:
+After the needed result files are present, recreate all figure PDFs with:
 
 ```bash
 Rscript code/plot.R
 ```
 
-The plotting script is organized in independent blocks. It assumes the corresponding result files already exist and currently uses `n_rep <- 200` when averaging over Monte Carlo replicates. If you run fewer replicates or only a subset of experiments, adjust the relevant section in `code/plot.R` before plotting.
-
-4. Add the manuscript source files to `manuscript/` when they are ready.
+The public repository includes the latest precomputed result files used by `code/plot.R`.
 
 ## Data
 
-- `data/Exam_Score_Prediction.csv` is used by `code/experiments/exam.R` and `code/experiments/exam-outlier.R`.
-- The remaining experiment scripts generate synthetic data internally.
+- `data/Exam_Score_Prediction.csv` is used by `exam.R`, `exam-outlier.R`, and `exam-outlier-2.R`.
+- Synthetic experiment scripts generate their data internally.

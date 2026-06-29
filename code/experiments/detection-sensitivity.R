@@ -15,14 +15,14 @@ if (file.exists(filename)) {
 
 set.seed(seed, kind = "L'Ecuyer-CMRG")
 
-# ---------------------------------------------------
 
 h_list <- seq(0, 1, 0.1)
 c_list <- seq(0.5, 3, 0.5)
 error_detection <- matrix(nrow = 6, ncol = length(h_list), dimnames = list(c_list, h_list))
+error_detection_sample <- matrix(nrow = 6, ncol = length(h_list), dimnames = list(c_list, h_list))
 
-K <- 10
-d <- 20
+K <- 20
+d <- 10
 epsilon <- 1
 delta <- 0.001
 eta <- 0.01
@@ -30,12 +30,11 @@ eta <- 0.01
 n <- 100000
 
 beta0 <- rep(1, d)/sqrt(d)
-rho <- 18/(1 + 81)
+rho <- 0.25
 
 for (i in 1:length(h_list)) {
   for (j in 1:length(c_list)) {
-    print(c(i,j))
-    c <- c_list[j]
+    threshold_c <- c_list[j]
     h <- h_list[i]
     beta <- matrix(nrow = d, ncol = K+1)
     data <- sapply(1:(K+1), function(k){
@@ -51,11 +50,15 @@ for (i in 1:length(h_list)) {
     
     X_combined <- Reduce(rbind, sapply(1:(K+1), function(k){data[[k]]$X}, simplify = F))
     Y_combined <- Reduce(c, sapply(1:(K+1), function(k){data[[k]]$Y}, simplify = F))
-    
-    A <- Priviate_detection(data, rho, epsilon/2, delta/2, beta0 = NULL, eta, c = 1, epsilon_r = epsilon, delta_r = delta, private_variance = "nodiff")
+
+    A <- Priviate_detection(data, rho, epsilon/2, delta/2, beta0 = NULL, eta, c = threshold_c, epsilon_r = epsilon, delta_r = delta, private_variance = "nodiff")
     error_detection[j, i] <- l2_error(LinearReg_FDP(data[A], T=floor(log(n*length(A))), rho, epsilon/2, delta/2, eta = eta, private_variance = "nodiff"), beta0)
 
+    D <- Data_splitting(data)
+    A <- Priviate_detection(D[[1]], rho, epsilon, delta, beta0 = NULL, eta, c = threshold_c, epsilon_r = epsilon, delta_r = delta, split_option = "sample", private_variance = "nodiff")
+    error_detection_sample[j, i] <- l2_error(LinearReg_FDP(D[[2]][A], T=floor(log(n*length(A)/2)), rho, epsilon, delta, eta = eta, private_variance = "nodiff"), beta0)
+    
   }
 }
 
-save(error_detection, file = filename)
+save(error_detection, error_detection_sample, file = filename)
